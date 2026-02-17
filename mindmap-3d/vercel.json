@@ -1,12 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "ng build --configuration production",
+  "buildCommand": "npm run build -- --configuration production",
   "outputDirectory": "dist/mindmap-3d/browser",
-  "framework": "angular",
-  "routes": [
-    {
-      "src": "^(?!.*\\.).*$",
-      "dest": "/index.html"
-    }
-  ]
+  "framework": "angular"
 }
