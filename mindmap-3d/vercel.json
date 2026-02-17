@@ -2,5 +2,11 @@
   "version": 2,
   "buildCommand": "npm run build -- --configuration production",
   "outputDirectory": "dist/mindmap-3d/browser",
-  "framework": "angular"
+  "framework": "angular",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
 }
