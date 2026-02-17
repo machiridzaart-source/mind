@@ -1,16 +1,12 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "dist/mindmap-3d/index.html",
-      "use": "@vercel/static"
-    }
-  ],
+  "buildCommand": "ng build --configuration production",
+  "outputDirectory": "dist/mindmap-3d/browser",
+  "framework": "angular",
   "routes": [
     {
-      "src": "/(.*)",
-      "dest": "dist/mindmap-3d/index.html",
-      "status": 200
+      "src": "^(?!.*\\.).*$",
+      "dest": "/index.html"
     }
   ]
 }
