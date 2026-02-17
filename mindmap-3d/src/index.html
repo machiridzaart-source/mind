@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Obsidian Brain Map</title>
+
+<style>
+  body {
+    margin: 0;
+    background: radial-gradient(circle at center, #111827 0%, #0b0f19 100%);
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  #graph {
+    width: 100vw;
+    height: 100vh;
+  }
+
+  .controls {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: rgba(11, 15, 25, 0.95);
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid rgba(56, 189, 248, 0.2);
+    color: white;
+    z-index: 100;
+    max-width: 360px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    max-height: 80vh;
+    overflow-y: auto;
+    backdrop-filter: blur(10px);
+    transition: width 0.3s ease, padding 0.3s ease;
+  }
+
+  .controls.minimized {
+    max-width: 50px;
+    padding: 10px;
+    overflow: hidden;
+  }
+
+  .controls-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+
+  .controls-title {
+    font-size: 13px;
+    color: #22d3ee;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    font-weight: 700;
+    margin: 0;
+    flex: 1;
+  }
+
+  .minimize-btn {
+    background: rgba(56, 189, 248, 0.3);
+    color: #22d3ee;
+    border: 1px solid rgba(56, 189, 248, 0.5);
+    border-radius: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+  }
+
+  .minimize-btn:hover {
+    background: rgba(56, 189, 248, 0.5);
+    transform: scale(1.1);
+  }
+
+  .controls.minimized .controls-title {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    white-space: nowrap;
+    font-size: 10px;
+  }
+
+  .controls-content {
+    transition: opacity 0.3s ease;
+  }
+
+  .controls.minimized .controls-content {
+    display: none;
+  }
+
+  .controls h3 {
+    margin: 0 0 15px 0;
+    font-size: 13px;
+    color: #22d3ee;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    font-weight: 700;
+  }
+
+  .form-group {
+    margin-bottom: 12px;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 11px;
+    color: #38bdf8;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+
+  .form-group input,
+  .form-group select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    background: rgba(30, 58, 138, 0.2);
+    color: #22d3ee;
+    border-radius: 6px;
+    font-size: 12px;
+  }
+
+  .form-group input::placeholder {
+    color: rgba(56, 189, 248, 0.4);
+  }
+
+  .form-group input:focus,
+  .form-group select:focus {
+    outline: none;
+    border-color: #22d3ee;
+    background: rgba(30, 58, 138, 0.4);
+    box-shadow: 0 0 10px rgba(34, 211, 238, 0.2);
+  }
+
+  .button-group {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 15px;
+  }
+
+  .btn {
+    flex: 1;
+    padding: 10px 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+  }
+
+  .btn-add {
+    background: linear-gradient(135deg, #38bdf8 0%, #22d3ee 100%);
+    color: #0b0f19;
+  }
+
+  .btn-add:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(34, 211, 238, 0.4);
+  }
+
+  .btn-export {
+    padding: 8px 12px;
+    background: rgba(56, 189, 248, 0.2);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.5);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    flex: 1;
+    transition: all 0.2s;
+  }
+
+  .btn-export:hover {
+    background: rgba(56, 189, 248, 0.3);
+    box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);
+  }
+
+  .data-controls {
+    display: flex;
+    gap: 8px;
+    margin-top: 15px;
+  }
+
+  .node-list {
+    background: rgba(30, 58, 138, 0.1);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+    border-radius: 6px;
+    padding: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+    margin: 15px 0;
+  }
+
+  .node-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    border-bottom: 1px solid rgba(56, 189, 248, 0.1);
+    font-size: 12px;
+    color: #22d3ee;
+  }
+
+  .node-item:last-child {
+    border-bottom: none;
+  }
+
+  .btn-remove {
+    padding: 4px 8px;
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 10px;
+    transition: all 0.2s;
+  }
+
+  .btn-remove:hover {
+    background: rgba(239, 68, 68, 0.4);
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+  }
+
+  .info-text {
+    font-size: 12px;
+    color: rgba(56, 189, 248, 0.7);
+    margin: 10px 0;
+    padding: 8px;
+    background: rgba(30, 58, 138, 0.1);
+    border-left: 2px solid #38bdf8;
+    border-radius: 4px;
+  }
+
+  /* Search Bar */
+  .search-bar-container {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 500;
+    width: 90%;
+    max-width: 600px;
+  }
+
+  .search-bar {
+    position: relative;
+  }
+
+  .search-bar input {
+    width: 100%;
+    padding: 15px 20px;
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    background: rgba(11, 15, 25, 0.95);
+    color: #22d3ee;
+    border-radius: 8px;
+    font-size: 14px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+  }
+
+  .search-bar input:focus {
+    outline: none;
+    border-color: #22d3ee;
+    background: rgba(11, 15, 25, 0.98);
+    box-shadow: 0 8px 32px rgba(34, 211, 238, 0.3);
+  }
+
+  .search-bar input::placeholder {
+    color: rgba(56, 189, 248, 0.5);
+  }
+
+  .search-results-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: rgba(11, 15, 25, 0.98);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    max-height: 300px;
+    overflow-y: auto;
+    display: none;
+    z-index: 501;
+  }
+
+  .search-results-dropdown.active {
+    display: block;
+  }
+
+  .search-result-item {
+    padding: 12px 20px;
+    border-bottom: 1px solid rgba(56, 189, 248, 0.1);
+    color: #22d3ee;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .search-result-item:hover {
+    background: rgba(56, 189, 248, 0.1);
+    padding-left: 25px;
+  }
+
+  .search-result-item:last-child {
+    border-bottom: none;
+  }
+
+  /* Modal Styles */
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: transparent;
+    z-index: 1000;
+    backdrop-filter: none;
+  }
+
+  .modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-content {
+    background: rgba(11, 15, 25, 0.98);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    border-radius: 12px;
+    padding: 25px;
+    max-width: 420px;
+    width: 100%;
+    max-height: 65vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+    padding-bottom: 15px;
+  }
+
+  .modal-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #22d3ee;
+    margin: 0;
+  }
+
+  .modal-close {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    border-radius: 6px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s;
+  }
+
+  .modal-close:hover {
+    background: rgba(239, 68, 68, 0.4);
+  }
+
+  .modal-body {
+    color: #ccc;
+    line-height: 1.6;
+  }
+
+  .modal-info-group {
+    margin-bottom: 20px;
+  }
+
+  .modal-info-label {
+    font-size: 12px;
+    color: #38bdf8;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .modal-info-value {
+    font-size: 14px;
+    color: #e5e7eb;
+    padding: 10px;
+    background: rgba(30, 58, 138, 0.1);
+    border-left: 2px solid #22d3ee;
+    border-radius: 4px;
+  }
+
+  .modal-connections {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(56, 189, 248, 0.2);
+  }
+
+  .modal-connections h4 {
+    color: #22d3ee;
+    margin: 0 0 10px 0;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .connection-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .connection-tag {
+    background: rgba(56, 189, 248, 0.2);
+    color: #38bdf8;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    border: 1px solid rgba(56, 189, 248, 0.3);
+  }
+</style>
+</head>
+
+<body>
+<!-- Search Bar -->
+<div class="search-bar-container">
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="🔍 Search nodes..." />
+    <div class="search-results-dropdown" id="searchResults"></div>
+  </div>
+</div>
+
+<div id="graph"></div>
+
+<div class="controls" id="controlsPanel">
+  <div class="controls-header">
+    <h3 class="controls-title">Add Node</h3>
+    <button class="minimize-btn" onclick="toggleControlsMinimize()" title="Minimize" id="minimizeBtn">−</button>
+  </div>
+  <div class="controls-content">
+    <div class="add-node-form">
+      <div class="form-group">
+        <label>Node Name</label>
+        <input type="text" id="nodeName" placeholder="Enter node name" />
+      </div>
+      <div class="form-group">
+        <label>Connect to (optional)</label>
+        <select id="connectToNode">
+          <option value="">-- New root node --</option>
+        </select>
+      </div>
+      <div class="button-group">
+        <button class="btn btn-add" onclick="addNode()">+ Add Node</button>
+      </div>
+    </div>
+
+    <h3>Nodes (<span id="nodeCount">400+</span>)</h3>
+    <div class="node-list" id="nodeList"></div>
+
+    <div class="data-controls">
+      <button class="btn-export" onclick="downloadData()">📥 Export</button>
+      <button class="btn-export" onclick="clearAll()" style="background: rgba(239, 68, 68, 0.2); color: #f87171; border-color: rgba(239, 68, 68, 0.4);">🗑️ Clear</button>
+    </div>
+
+    <h3 style="margin-top: 20px;">Controls</h3>
+    <div class="info-text">
+      <strong>Drag</strong> to rotate • <strong>Click</strong> to zoom • <strong>Scroll</strong> to zoom out
+    </div>
+  </div>
+</div>
+
+<!-- Node Info Modal -->
+<div class="modal" id="nodeModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 class="modal-title" id="modalNodeName">Node Name</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-info-group">
+        <div class="modal-info-label">Type</div>
+        <div class="modal-info-value" id="modalNodeType">Brain Region</div>
+      </div>
+      <div class="modal-info-group">
+        <div class="modal-info-label">Description</div>
+        <div class="modal-info-value" id="modalNodeDesc">Information about this brain region...</div>
+      </div>
+      <div class="modal-info-group">
+        <div class="modal-info-label">Functions</div>
+        <div class="modal-info-value" id="modalNodeFunctions">Primary functions of this region...</div>
+      </div>
+      <div class="modal-connections" id="modalConnections" style="display:none;">
+        <h4>Connected Regions</h4>
+        <div class="connection-list" id="connectionList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Three.js and Force Graph -->
+<script src="https://unpkg.com/three@0.158.0/build/three.min.js"></script>
+<script src="https://unpkg.com/three-spritetext@1.8.1/dist/three-spritetext.min.js"></script>
+<script src="https://unpkg.com/3d-force-graph@1.77.0/dist/3d-force-graph.min.js"></script>
+
+<script>
+  let graphData = { nodes: [], links: [] };
+  let graph = null;
+
+  // Brain region information database
+  const brainInfo = {
+    'Brain': {
+      type: 'Organ',
+      description: 'The central nervous system\'s control center containing ~86 billion neurons',
+      functions: 'Processes sensory information, controls movements, manages emotions, cognition, and memory'
+    },
+    'Cerebral Cortex': {
+      type: 'Brain Region',
+      description: 'Outermost layer of the brain responsible for higher-order functions',
+      functions: 'Consciousness, decision-making, language, planning, learning, memory'
+    },
+    'Prefrontal Cortex': {
+      type: 'Brain Area',
+      description: 'Part of the frontal lobe involved in executive functions',
+      functions: 'Decision-making, impulse control, planning, working memory, personality expression'
+    },
+    'Motor Cortex': {
+      type: 'Brain Area',
+      description: 'Located in the frontal lobe, controls voluntary movement',
+      functions: 'Initiates and controls voluntary muscle movements throughout the body'
+    },
+    'Primary Somatosensory Cortex': {
+      type: 'Brain Area',
+      description: 'Located in the parietal lobe, processes touch sensations',
+      functions: 'Processes sensations of touch, temperature, and pain from all body regions'
+    },
+    'Primary Visual Cortex': {
+      type: 'Brain Area',
+      description: 'Located in the occipital lobe, first cortical area to process visual information',
+      functions: 'Processes basic visual features like orientation, spatial frequency, and color'
+    },
+    'Primary Auditory Cortex': {
+      type: 'Brain Area',
+      description: 'Located in the temporal lobe, processes sound frequencies',
+      functions: 'Processes acoustic information and sound discrimination'
+    },
+    'Hippocampus': {
+      type: 'Brain Structure',
+      description: 'Seahorse-shaped structure crucial for memory formation',
+      functions: 'Converts short-term memories to long-term, spatial navigation, contextual learning'
+    },
+    'Amygdala': {
+      type: 'Brain Structure',
+      description: 'Almond-shaped structure involved in emotions and fear processing',
+      functions: 'Emotional processing, fear conditioning, threat detection, emotional memories'
+    },
+    'Thalamus': {
+      type: 'Brain Structure',
+      description: 'Relay station for sensory information to the cortex',
+      functions: 'Routes sensory signals (except smell) to appropriate cortical areas'
+    },
+    'Hypothalamus': {
+      type: 'Brain Structure',
+      description: 'Controls hormonal and autonomic nervous system functions',
+      functions: 'Regulates hunger, thirst, temperature, sleep, hormones, autonomic functions'
+    },
+    'Cerebellum': {
+      type: 'Brain Region',
+      description: 'Coordinates movement and maintains balance',
+      functions: 'Motor coordination, balance, fine motor control, motor learning'
+    },
+    'Substantia Nigra': {
+      type: 'Brain Structure',
+      description: 'Part of the basal ganglia involved in movement control',
+      functions: 'Produces dopamine, regulates movement initiation and motivation'
+    },
+    'Wernicke Area': {
+      type: 'Brain Area',
+      description: 'Located in the superior temporal lobe, processes language comprehension',
+      functions: 'Language comprehension and understanding spoken/written language'
+    },
+    'Broca Area': {
+      type: 'Brain Area',
+      description: 'Located in the inferior frontal lobe, involved in speech production',
+      functions: 'Speech production, language expression, articulation'
+    }
+  };
+
+  // Get default info for regions
+  function getNodeInfo(nodeId) {
+    const info = brainInfo[nodeId];
+    if (info) return info;
+    
+    // Generate generic info based on node keywords
+    let type = 'Brain Region';
+    let functions = 'Processes neural information and contributes to brain function';
+    
+    if (nodeId.includes('Cortex') || nodeId.includes('Area') || nodeId.includes('Gyrus')) {
+      type = 'Cortical Area';
+      functions = 'Processes cortical information and higher-order brain functions';
+    } else if (nodeId.includes('Nucleus') || nodeId.includes('Nuclei')) {
+      type = 'Nuclear Structure';
+      functions = 'Integrates and processes neural signals';
+    } else if (nodeId.includes('Layer')) {
+      type = 'Cortical Layer';
+      functions = 'Processes specific types of neural information';
+    }
+    
+    return {
+      type: type,
+      description: `${nodeId} is a specialized region of the brain involved in specific neural processes`,
+      functions: functions
+    };
+  }
+
+  // Open modal with node information
+  function openNodeModal(node) {
+    const info = getNodeInfo(node.id);
+    
+    document.getElementById('modalNodeName').textContent = node.label || node.id;
+    document.getElementById('modalNodeType').textContent = info.type;
+    document.getElementById('modalNodeDesc').textContent = info.description;
+    document.getElementById('modalNodeFunctions').textContent = info.functions;
+    
+    // Show connected regions
+    const connections = graphData.links.filter(l => 
+      (l.source === node.id || l.source.id === node.id) ||
+      (l.target === node.id || l.target.id === node.id)
+    );
+    
+    if (connections.length > 0) {
+      const connectionList = document.getElementById('connectionList');
+      connectionList.innerHTML = '';
+      
+      const connectedIds = new Set();
+      connections.forEach(link => {
+        const connectedId = link.source === node.id || link.source.id === node.id ? 
+          (typeof link.target === 'string' ? link.target : link.target.id) :
+          (typeof link.source === 'string' ? link.source : link.source.id);
+        
+        if (!connectedIds.has(connectedId) && connectedId !== node.id) {
+          const connectedNode = graphData.nodes.find(n => n.id === connectedId);
+          if (connectedNode) {
+            connectedIds.add(connectedId);
+            const tag = document.createElement('div');
+            tag.className = 'connection-tag';
+            tag.textContent = connectedNode.label || connectedNode.id;
+            connectionList.appendChild(tag);
+          }
+        }
+      });
+      
+      document.getElementById('modalConnections').style.display = 
+        connectedIds.size > 0 ? 'block' : 'none';
+    } else {
+      document.getElementById('modalConnections').style.display = 'none';
+    }
+    
+    document.getElementById('nodeModal').classList.add('active');
+  }
+
+  // Close modal
+  function closeModal() {
+    document.getElementById('nodeModal').classList.remove('active');
+  }
+
+  // Close modal when clicking outside
+  document.addEventListener('click', function(e) {
+    const modal = document.getElementById('nodeModal');
+    if (e.target === modal) {
+      closeModal();
+    }
+  });
+
+  // Close modal on Escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      closeModal();
+    }
+  });
+
+  // Load data from localStorage
+  function loadData() {
+    const saved = localStorage.getItem('mindmapData');
+    
+    // Check if we have old cached data (Business, Finance, etc.) and clear it
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        // If old format detected (small dataset), regenerate brain nodes
+        if (data.nodes && data.nodes.length < 50) {
+          console.log('Old data detected, regenerating brain nodes...');
+          localStorage.removeItem('mindmapData');
+          initializeDefaultData();
+          saveData();
+          return;
+        }
+        graphData = data;
+        console.log('Loaded data from localStorage');
+      } catch (e) {
+        console.error('Failed to load:', e);
+        initializeDefaultData();
+      }
+    } else {
+      initializeDefaultData();
+    }
+  }
+
+  // Initialize default data
+  function initializeDefaultData() {
+    // Generate ~400 brain nodes with ultra-detailed anatomical structure
+    const brainRegions = {
+      'Cerebral Cortex': {
+        'Frontal Lobe': {
+          'Prefrontal Cortex': ['Dorsolateral PFC', 'Medial PFC', 'Orbital PFC', 'Ventromedial PFC', 'Lateral Orbital Cortex', 'Frontopolar Cortex', 'Anterior Insula'],
+          'Motor Areas': ['Primary Motor Cortex', 'Premotor Cortex', 'Supplementary Motor Area', 'Pre-SMA', 'Secondary Motor Cortex', 'Cingulate Motor Area', 'Motor Cortex Layer 5'],
+          'Anterior Cingulate': ['Dorsal Anterior Cingulate', 'Subgenual Cingulate', 'Pregenual Cingulate', 'Rostral Cingulate', 'Caudal Cingulate', 'Ventral ACC', 'Dorsal ACC'],
+          'Inferior Frontal': ['Broca Area', 'Pars Opercularis', 'Pars Triangularis', 'Pars Orbitalis', 'Inferior Frontal Gyrus', 'IFG Posterior', 'IFG Anterior']
+        },
+        'Parietal Lobe': {
+          'Somatosensory': ['Primary Somatosensory Cortex', 'S1 Trunk Area', 'S1 Hand Area', 'S1 Head Area', 'S1 Leg Area', 'Secondary Somatosensory Cortex', 'Parietal Operculum'],
+          'Posterior Parietal': ['Superior Parietal Lobule', 'Intraparietal Sulcus', 'Precuneus', 'Posterior Cingulate', 'IPS Lateral Area', 'IPS Medial Area', 'SPL Anterior', 'SPL Posterior'],
+          'Inferior Parietal': ['Supramarginal Gyrus', 'Angular Gyrus', 'Temporoparietal Junction', 'IPL Anterior', 'IPL Posterior', 'Area 39', 'Area 40']
+        },
+        'Temporal Lobe': {
+          'Auditory Cortex': ['Primary Auditory Cortex', 'A1 Anterior', 'A1 Posterior', 'Secondary Auditory Cortex', 'Auditory Association Area', 'Superior Temporal Gyrus', 'Middle Temporal Gyrus'],
+          'Language Areas': ['Wernicke Area', 'Wernicke Anterior', 'Wernicke Posterior', 'Superior Temporal Sulcus', 'Middle Temporal Cortex', 'Temporal Pole', 'Planum Temporale'],
+          'Inferior Temporal': ['Inferior Temporal Gyrus', 'Fusiform Gyrus', 'Parahippocampal Gyrus', 'Perirhinal Cortex', 'Entorhinal Cortex', 'ITG Anterior', 'ITG Posterior']
+        },
+        'Occipital Lobe': {
+          'Visual Cortex': ['Primary Visual Cortex', 'V1 Central', 'V1 Peripheral', 'V2', 'V3', 'V3A', 'V4', 'V5/MT', 'V5a', 'MST', 'LP', 'LOA']
+        }
+      },
+      'Limbic System': {
+        'Hippocampal Formation': {
+          'Hippocampus': ['CA1', 'CA2', 'CA3', 'CA4', 'Dentate Gyrus', 'Dentate Granule Cells', 'Dentate Hilus', 'Subiculum', 'Presubiculum', 'Parasubiculum', 'Prosubiculum'],
+          'Associated Cortex': ['Perirhinal Cortex', 'Parahippocampal Cortex', 'Entorhinal Cortex Layer II', 'Entorhinal Cortex Layer III', 'Entorhinal medial', 'Entorhinal Lateral']
+        },
+        'Amygdala': {
+          'Amygdaloid Complex': ['Basolateral Amygdala', 'Lateral Nucleus', 'Basal Nucleus', 'Accessory Basal Nucleus', 'Medial Amygdala', 'Central Amygdala', 'Cortical Amygdala', 'Anterior Amygdala']
+        },
+        'Cingulate Cortex': {
+          'Anterior Cingulate': ['Ventral ACC', 'Dorsal ACC', 'Subgenual ACC', 'Pregenual ACC'],
+          'Posterior Cingulate': ['Posterior Cingulate Cortex', 'Ventral Posterior Cingulate', 'Dorsal Posterior Cingulate', 'Retrosplenial Cortex']
+        },
+        'Orbitofrontal': ['Lateral OFC', 'Medial OFC', 'Ventromedial OFC', 'Superior OFC']
+      },
+      'Diencephalon': {
+        'Thalamus': {
+          'Sensory Relays': ['Ventral Anterior', 'Ventral Lateral', 'Ventral Medial', 'Ventral Posterior Lateral', 'Ventral Posterior Medial', 'Lateral Geniculate Nucleus', 'Medial Geniculate Nucleus'],
+          'Intralaminar': ['Centromedian Nucleus', 'Parafascicular Nucleus', 'Central Medial', 'Paracentral Nucleus', 'Intralaminar Medial'],
+          'Thalamic Reticular': ['Reticular Nucleus', 'Reticular Medial', 'Reticular Lateral'],
+          'Other Thalamic': ['Dorsomedial Nucleus', 'Midline Thalamus', 'Anterior Thalamus', 'Posterior Thalamus']
+        },
+        'Hypothalamus': {
+          'Suprachiasmatic': ['SCN', 'SCN Core', 'SCN Shell'],
+          'Posterior': ['Posterior Hypothalamus', 'Lateral Posterior', 'Medial Posterior', 'Posterior Nucleus', 'Mammillary Nucleus'],
+          'Anterior': ['Anterior Hypothalamus', 'Supraoptic Nucleus', 'Paraventricular Nucleus', 'PVN Magnocellular', 'PVN Parvocellular', 'Anterior Medial'],
+          'Infundibulum': ['Arcuate Nucleus', 'Ventromedial Hypothalamus', 'Lateral Hypothalamus', 'Dorsomedial Hypothalamus']
+        },
+        'Epithalamus': ['Pineal Gland', 'Habenula', 'Medial Habenula', 'Lateral Habenula']
+      },
+      'Cerebellum': {
+        'Cerebellar Lobules': ['Anterior Lobe', 'Lingula', 'Central Lobule', 'Culmen', 'Declive', 'Folium', 'Tuber', 'Pyramid', 'Uvula', 'Nodule', 'Flocculus', 'Paraflocculus', 'Posterior Lobe'],
+        'Granule Layer': ['Granule Cells', 'Golgi Cells', 'Basket Cells', 'Parallel Fibers'],
+        'Purkinje Layer': ['Purkinje Cells', 'Stellate Cells'],
+        'Deep Cerebellar Nuclei': ['Dentate Nucleus', 'Interposed Nuclei', 'Fastigial Nucleus', 'Vestibular Nuclei']
+      },
+      'Brainstem': {
+        'Midbrain': {
+          'Tegmentum': ['Substantia Nigra Pars Compacta', 'Substantia Nigra Pars Reticulata', 'Ventral Tegmental Area', 'Red Nucleus', 'Periaqueductal Gray'],
+          'Tectum': ['Superior Colliculus', 'Inferior Colliculus', 'Collicular Layers'],
+          'Other Midbrain': ['Dorsal Raphe Nucleus', 'Ventral Tegmental Area', 'Oculomotor Nucleus', 'Trochlear Nucleus']
+        },
+        'Pons': {
+          'Brainstem Nuclei': ['Locus Coeruleus', 'Raphe Pontis', 'Superior Olive', 'Brachium Pontis', 'Pontine Nuclei', 'Parabrachial Nucleus', 'Motor Nuclei Trigeminal', 'Sensory Nuclei Trigeminal']
+        },
+        'Medulla': {
+          'Dorsal Medulla': ['Nucleus Gracilis', 'Nucleus Cuneatus', 'Hypoglossal Nucleus', 'Dorsal Motor Nuclei Vagus', 'Solitary Nucleus'],
+          'Ventral Medulla': ['Ventral Motor Nuclei', 'Nucleus Ambiguus', 'Inferior Olive', 'Pyramids', 'Arcuate Nucleus Medulla']
+        }
+      },
+      'Basal Ganglia': {
+        'Striatum': {
+          'Dorsal': ['Caudate Head', 'Caudate Tail', 'Caudate Body', 'Dorsolateral Putamen', 'Dorsomedial Putamen', 'Ventral Striatum'],
+          'Ventral': ['Nucleus Accumbens Core', 'Nucleus Accumbens Shell', 'Ventral Tegmental Area', 'Ventral Pallidum']
+        },
+        'Pallidal': ['Globus Pallidus External', 'Globus Pallidus Internal', 'GPe Rostral', 'GPe Caudal', 'GPi Rostral', 'GPi Caudal'],
+        'Other BG': ['Substantia Nigra', 'Subthalamic Nucleus', 'STN Ventral', 'STN Dorsal']
+      },
+      'White Matter': {
+        'Commissures': ['Corpus Callosum Rostrum', 'Corpus Callosum Genu', 'Corpus Callosum Body', 'Corpus Callosum Splenium', 'Anterior Commissure', 'Posterior Commissure', 'Hippocampal Commissure'],
+        'Projection Tracts': ['Internal Capsule Anterior', 'Internal Capsule Genu', 'Internal Capsule Posterior', 'External Capsule', 'Extreme Capsule', 'Optic Radiation', 'Pyramidal Tract'],
+        'Association Tracts': ['Arcuate Fasciculus', 'Superior Longitudinal Fasciculus I', 'Superior Longitudinal Fasciculus II', 'Superior Longitudinal Fasciculus III', 'Inferior Longitudinal Fasciculus', 'Inferior Fronto-Occipital Fasciculus', 'Uncinate Fasciculus', 'Cingulum Bundle', 'Superior Fronto-Occipital Fasciculus', 'Fornix Columns', 'Fornix Body', 'Fornix Crura', 'Fornix Fimbria']
+      },
+      'Ventricles': ['Lateral Ventricle Left', 'Lateral Ventricle Right', 'Third Ventricle', 'Fourth Ventricle', 'Anterior Horn', 'Posterior Horn', 'Temporal Horn', 'Central Canal']
+    };
+
+    // Flatten the structure into nodes
+    graphData.nodes = [{ id: 'Brain', label: 'Brain' }];
+    graphData.links = [];
+
+    const nodeMap = new Map();
+    nodeMap.set('Brain', graphData.nodes[0]);
+
+    let nodeCount = 1;
+
+    // Function to add department children with random subnodes
+    function addDepartmentChildren(deptId, obj, depth = 0) {
+      if (Array.isArray(obj)) {
+        // It's an array of strings (leaf nodes become parent nodes with subnodes)
+        obj.forEach(itemName => {
+          const childId = `${deptId}_child_${nodeCount}`;
+          const childNode = { id: childId, label: itemName };
+          graphData.nodes.push(childNode);
+          nodeMap.set(childId, childNode);
+          graphData.links.push({ source: deptId, target: childId });
+          nodeCount++;
+          
+          // Add random subnodes to each child (at least 2)
+          const subnodes = generateRandomSubnodes(itemName, 2 + Math.floor(Math.random() * 2));
+          subnodes.forEach(subname => {
+            const subId = `${childId}_sub_${nodeCount}`;
+            const subNode = { id: subId, label: subname };
+            graphData.nodes.push(subNode);
+            nodeMap.set(subId, subNode);
+            graphData.links.push({ source: childId, target: subId });
+            nodeCount++;
+          });
+        });
+      } else if (typeof obj === 'object') {
+        // It's an object with nested structure
+        Object.entries(obj).forEach(([key, value]) => {
+          const childId = `${deptId}_cat_${nodeCount}`;
+          const childNode = { id: childId, label: key };
+          graphData.nodes.push(childNode);
+          nodeMap.set(childId, childNode);
+          graphData.links.push({ source: deptId, target: childId });
+          nodeCount++;
+          
+          // Recursively add children
+          addDepartmentChildren(childId, value, depth + 1);
+        });
+      }
+    }
+
+    // Function to generate random subnodes
+    function generateRandomSubnodes(baseLabel, count = 2) {
+      const subnodes = [];
+      const prefixes = ['Core', 'Advanced', 'Specialized', 'Primary', 'Secondary', 'Applied', 'Research', 'Development'];
+      const suffixes = ['Methods', 'Practices', 'Analytics', 'Tools', 'Strategies', 'Framework', 'Process', 'Module'];
+      
+      const shuffled = [...prefixes].sort(() => Math.random() - 0.5);
+      const shuffledSuffix = [...suffixes].sort(() => Math.random() - 0.5);
+      
+      for (let i = 0; i < count; i++) {
+        subnodes.push(`${shuffled[i % shuffled.length]} ${suffixes[Math.floor(Math.random() * suffixes.length)]}`);
+      }
+      return subnodes;
+    }
+
+    // Process brain regions as DEPARTMENTS
+    Object.entries(brainRegions).forEach(([regionName, regionData]) => {
+      const deptNode = { id: regionName, label: `📊 ${regionName}`, isDepartment: true };
+      graphData.nodes.push(deptNode);
+      nodeMap.set(regionName, deptNode);
+      graphData.links.push({ source: 'Brain', target: regionName });
+      nodeCount++;
+      
+      // Add child nodes from the region
+      addDepartmentChildren(regionName, regionData);
+    });
+
+    console.log(`Generated ${graphData.nodes.length} department nodes with ${graphData.links.length} connections!`);
+  }
+
+  // Save data
+  function saveData() {
+    localStorage.setItem('mindmapData', JSON.stringify(graphData));
+    console.log('Data saved');
+  }
+
+  // Add node
+  function addNode() {
+    const name = document.getElementById('nodeName').value.trim();
+    const connectTo = document.getElementById('connectToNode').value;
+
+    if (!name) {
+      alert('Enter a node name');
+      return;
+    }
+
+    if (graphData.nodes.find(n => n.id === name)) {
+      alert('Node already exists');
+      return;
+    }
+
+    graphData.nodes.push({ id: name, label: name });
+
+    if (connectTo) {
+      graphData.links.push({ source: connectTo, target: name });
+    }
+
+    document.getElementById('nodeName').value = '';
+    document.getElementById('connectToNode').value = '';
+
+    saveData();
+    updateConnectSelect();
+    updateNodeList();
+    updateGraph();
+  }
+
+  // Remove node
+  function removeNode(nodeId) {
+    graphData.nodes = graphData.nodes.filter(n => n.id !== nodeId);
+    graphData.links = graphData.links.filter(l => l.source !== nodeId && l.target !== nodeId);
+    saveData();
+    updateConnectSelect();
+    updateNodeList();
+    updateGraph();
+  }
+
+  // Update connect dropdown
+  function updateConnectSelect() {
+    const select = document.getElementById('connectToNode');
+    const current = select.value;
+    
+    select.innerHTML = '<option value="">-- New root node --</option>';
+    graphData.nodes.forEach(node => {
+      const option = document.createElement('option');
+      option.value = node.id;
+      option.textContent = node.label || node.id;
+      select.appendChild(option);
+    });
+    
+    if (graphData.nodes.find(n => n.id === current)) {
+      select.value = current;
+    }
+  }
+
+  // Update node list
+  function updateNodeList() {
+    const list = document.getElementById('nodeList');
+    list.innerHTML = '';
+
+    graphData.nodes.forEach(node => {
+      const item = document.createElement('div');
+      item.className = 'node-item';
+      item.innerHTML = `
+        <span>${node.label || node.id}</span>
+        <button class="btn-remove" onclick="removeNode('${node.id}')">✕</button>
+      `;
+      list.appendChild(item);
+    });
+
+    document.getElementById('nodeCount').textContent = graphData.nodes.length;
+  }
+
+  // Update graph
+  function updateGraph() {
+    if (graph) {
+      graph.graphData(graphData);
+    }
+  }
+
+  // Download data
+  function downloadData() {
+    const str = JSON.stringify(graphData, null, 2);
+    const blob = new Blob([str], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `mindmap_${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // Clear all
+  function clearAll() {
+    if (confirm('Clear all nodes?')) {
+      graphData = { nodes: [], links: [] };
+      saveData();
+      updateConnectSelect();
+      updateNodeList();
+      updateGraph();
+    }
+  }
+
+  // Initialize on load
+  window.addEventListener('load', function() {
+    console.log('Initializing...');
+    loadData();
+
+    if (!window.ForceGraph3D) {
+      console.error('ForceGraph3D not loaded');
+      return;
+    }
+
+    const elem = document.getElementById('graph');
+    graph = ForceGraph3D()(elem)
+      .backgroundColor('#0b0f19')
+      .nodeRelSize(6)
+      .linkWidth(1)
+      .linkOpacity(0.25)
+      .nodeResolution(16);
+
+    graph.graphData(graphData);
+
+    // Node labels
+    graph.nodeThreeObject(node => {
+      const sprite = new SpriteText(node.label || node.id);
+      sprite.color = "#7dd3fc";
+      sprite.textHeight = 4;
+      return sprite;
+    });
+
+    // Physics
+    graph.d3Force("charge").strength(-200);
+    graph.d3Force("link").distance(100).strength(0.8);
+    graph.d3VelocityDecay(0.5);
+    graph.warmupTicks(100);
+
+    // Hover highlight
+    let highlightNodes = new Set();
+    let highlightLinks = new Set();
+
+    graph.onNodeHover(node => {
+      highlightNodes.clear();
+      highlightLinks.clear();
+
+      if (node) {
+        highlightNodes.add(node);
+        graphData.links.forEach(link => {
+          if ((link.source.id || link.source) === node.id || (link.target.id || link.target) === node.id) {
+            highlightLinks.add(link);
+            const sourceNode = typeof link.source === 'string' ? graphData.nodes.find(n => n.id === link.source) : link.source;
+            const targetNode = typeof link.target === 'string' ? graphData.nodes.find(n => n.id === link.target) : link.target;
+            if (sourceNode) highlightNodes.add(sourceNode);
+            if (targetNode) highlightNodes.add(targetNode);
+          }
+        });
+      }
+    });
+
+    graph.nodeColor(node =>
+      highlightNodes.size === 0
+        ? "#38bdf8"
+        : highlightNodes.has(node)
+        ? "#22d3ee"
+        : "rgba(100,100,100,0.2)"
+    );
+
+    graph.linkColor(link =>
+      highlightLinks.size === 0
+        ? "rgba(125,211,252,0.3)"
+        : highlightLinks.has(link)
+        ? "#22d3ee"
+        : "rgba(100,100,100,0.1)"
+    );
+
+    // Click to zoom
+    graph.onNodeClick(node => {
+      const distance = 150;
+      const distRatio = 1 + distance / Math.hypot(node.x, node.y, node.z);
+
+      graph.cameraPosition(
+        { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
+        node,
+        1000
+      );
+      
+      // Open modal with node info after camera animation completes
+      setTimeout(() => {
+        openNodeModal(node);
+      }, 1100);
+    });
+
+    updateConnectSelect();
+    updateNodeList();
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && document.activeElement.id === 'nodeName') {
+        addNode();
+      }
+    });
+
+    console.log('Ready!');
+  });
+
+  // Toggle controls panel minimize
+  function toggleControlsMinimize() {
+    const controlsPanel = document.getElementById('controlsPanel');
+    const minimizeBtn = document.getElementById('minimizeBtn');
+    
+    controlsPanel.classList.toggle('minimized');
+    minimizeBtn.textContent = controlsPanel.classList.contains('minimized') ? '+' : '−';
+    minimizeBtn.title = controlsPanel.classList.contains('minimized') ? 'Expand' : 'Minimize';
+  }
+
+  // Search functionality
+  const searchInput = document.getElementById('searchInput');
+  const searchResultsDropdown = document.getElementById('searchResults');
+
+  searchInput.addEventListener('input', function(e) {
+    const query = e.target.value.toLowerCase().trim();
+    
+    if (query.length === 0) {
+      searchResultsDropdown.classList.remove('active');
+      return;
+    }
+
+    // Filter nodes by query
+    const results = graphData.nodes.filter(node => 
+      node.label.toLowerCase().includes(query)
+    ).slice(0, 10); // Limit to 10 results
+
+    if (results.length > 0) {
+      searchResultsDropdown.innerHTML = results.map(node => 
+        `<div class="search-result-item" onclick="searchNodeClick('${node.id}')">${node.label}</div>`
+      ).join('');
+      searchResultsDropdown.classList.add('active');
+    } else {
+      searchResultsDropdown.innerHTML = '<div class="search-result-item" style="color: rgba(56, 189, 248, 0.5);">No results found</div>';
+      searchResultsDropdown.classList.add('active');
+    }
+  });
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    if (e.target !== searchInput && !e.target.closest('.search-bar')) {
+      searchResultsDropdown.classList.remove('active');
+    }
+  });
+
+  // Handle search result click
+  function searchNodeClick(nodeId) {
+    const node = graphData.nodes.find(n => n.id === nodeId);
+    if (node) {
+      searchInput.value = '';
+      searchResultsDropdown.classList.remove('active');
+      
+      // Zoom to node
+      const distance = 150;
+      const distRatio = 1 + distance / Math.hypot(node.x, node.y, node.z);
+      graph.cameraPosition(
+        { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
+        node,
+        1000
+      );
+      
+      // Open modal with node info after camera animation completes
+      setTimeout(() => {
+        openNodeModal(node);
+      }, 1100);
+    }
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,72 @@
+<div class="mindmap-container">
+  <div class="canvas-wrapper">
+    <canvas #canvas id="mindmap-canvas"></canvas>
+  </div>
+  
+  <div class="controls-panel" [class.minimized]="controlsPanelMinimized">
+    <div class="panel-header">
+      <h2>🧠 Mindmap</h2>
+      <button class="minimize-btn" (click)="toggleControlsPanel()" [title]="controlsPanelMinimized ? 'Expand' : 'Minimize'">
+        {{ controlsPanelMinimized ? '▶' : '◀' }}
+      </button>
+    </div>
+    <div class="panel-content" *ngIf="!controlsPanelMinimized">
+      <div class="control-group">
+        <button (click)="resetView()" class="btn btn-primary">🔄 Reset</button>
+        <button (click)="openAddNodeModal()" class="btn btn-success">➕ Add Node</button>
+        <button (click)="deleteSelectedNode()" class="btn btn-danger">🗑️ Delete</button>
+      </div>
+      <div class="info-panel">
+        <h3>Camera</h3>
+        <ul>
+          <li>Right-click → Orbit</li>
+          <li>Middle-click → Pan</li>
+          <li>Scroll → Zoom</li>
+        </ul>
+      </div>
+      <div class="info-panel">
+        <h3>Nodes</h3>
+        <ul>
+          <li>Click → Select</li>
+          <li>Drag → Move</li>
+          <li>Double-click → Add child</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Node Modal -->
+  <div class="add-node-modal" [class.active]="showAddNodeModal" [class.minimized]="addNodeModalMinimized">
+    <div class="modal-header">
+      <h3>➕ Add Node</h3>
+      <div class="modal-controls">
+        <button class="modal-btn" (click)="toggleAddNodeModal()" [title]="addNodeModalMinimized ? 'Expand' : 'Minimize'">
+          {{ addNodeModalMinimized ? '▲' : '▼' }}
+        </button>
+        <button class="modal-btn close" (click)="closeAddNodeModal()" title="Close">✕</button>
+      </div>
+    </div>
+    <div class="modal-content" *ngIf="!addNodeModalMinimized">
+      <div class="form-group">
+        <label for="nodeLabel">Node Label</label>
+        <input 
+          type="text" 
+          id="nodeLabel" 
+          [(ngModel)]="newNodeLabel" 
+          placeholder="Enter node name"
+          (keyup.enter)="addNode()"
+        >
+      </div>
+      <div class="form-group">
+        <label for="parentNode">Parent Node</label>
+        <select id="parentNode" [(ngModel)]="newNodeParentId">
+          <option value="">-- Root Node --</option>
+          <option *ngFor="let node of getAvailableParents()" [value]="node.id">
+            {{ node.label }}
+          </option>
+        </select>
+      </div>
+      <button class="btn btn-success" (click)="addNode()">Create Node</button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BrainFix - Intelligent Troubleshooting Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #1e40af;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #0f172a;
+            --bg-secondary: #1e293b;
+            --text: #f1f5f9;
+            --text-secondary: #cbd5e1;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--bg) 0%, #1a1f35 100%);
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        /* Header / Navigation */
+        header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(100, 150, 200, 0.1);
+            z-index: 1000;
+            padding: 1rem 2rem;
+        }
+
+        nav {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        .auth-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border-radius: 6px;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        /* Main Container */
+        main {
+            margin-top: 60px;
+        }
+
+        /* Hero Section */
+        .hero {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+            min-height: calc(100vh - 60px);
+        }
+
+        .hero-content h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+            background: linear-gradient(135deg, var(--primary), #22d3ee);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-content p {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .search-box {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            background: rgba(59, 130, 246, 0.05);
+            color: var(--text);
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            background: rgba(59, 130, 246, 0.1);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .search-results {
+            position: absolute;
+            top: 60px;
+            width: 100%;
+            background: var(--bg-secondary);
+            border: 1px solid rgba(100, 150, 200, 0.2);
+            border-radius: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+        }
+
+        .search-results.active {
+            display: block;
+        }
+
+        .result-item {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(100, 150, 200, 0.1);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .result-item:hover {
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .result-title {
+            color: var(--primary);
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+        }
+
+        .result-desc {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .cta-buttons .btn {
+            flex: 1;
+            padding: 1rem;
+            text-align: center;
+            font-size: 1rem;
+        }
+
+        /* Brain Container */
+        .brain-hero {
+            position: relative;
+            height: 600px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(100, 150, 200, 0.2);
+            background: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.1), transparent);
+        }
+
+        #heroBrain {
+            width: 100%;
+            height: 100%;
+        }
+
+        .brain-stats {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid rgba(100, 150, 200, 0.2);
+        }
+
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            font-size: 0.9rem;
+        }
+
+        .stat-value {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        /* Messages/Info Panel */
+        .info-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid rgba(100, 150, 200, 0.2);
+            max-width: 250px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .info-title {
+            color: var(--primary);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .info-desc {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .info-guides {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(100, 150, 200, 0.2);
+        }
+
+        .guide-item {
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 4px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .guide-item:hover {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--primary);
+        }
+
+        /* Features Section */
+        .features {
+            max-width: 1400px;
+            margin: 6rem auto;
+            padding: 0 2rem;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            text-align: center;
+            background: linear-gradient(135deg, var(--primary), #22d3ee);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(100, 150, 200, 0.2);
+            padding: 2rem;
+            border-radius: 12px;
+            transition: all 0.3s;
+        }
+
+        .feature-card:hover {
+            border-color: var(--primary);
+            background: rgba(30, 41, 59, 0.9);
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 0.8rem;
+            color: var(--primary);
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Knowledge Base Section */
+        .knowledge-base {
+            max-width: 1400px;
+            margin: 6rem auto;
+            padding: 4rem 2rem;
+            background: rgba(30, 41, 59, 0.3);
+            border: 1px solid rgba(100, 150, 200, 0.1);
+            border-radius: 16px;
+        }
+
+        .kb-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .issue-card {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(100, 150, 200, 0.2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .issue-card:hover {
+            border-color: var(--primary);
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .issue-region {
+            font-size: 0.85rem;
+            color: var(--primary);
+            margin-bottom: 0.3rem;
+        }
+
+        .issue-title {
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .issue-symptoms {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid rgba(100, 150, 200, 0.2);
+            border-radius: 12px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 2rem;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid rgba(100, 150, 200, 0.2);
+            padding-bottom: 1rem;
+        }
+
+        .modal-header h2 {
+            color: var(--primary);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .solution-step {
+            background: rgba(59, 130, 246, 0.1);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 6px;
+            border-left: 3px solid var(--primary);
+        }
+
+        /* Auth Modal */
+        .auth-modal-content {
+            max-width: 400px;
+        }
+
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            margin-bottom: 0.3rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .form-group input {
+            padding: 0.8rem;
+            border: 1px solid rgba(100, 150, 200, 0.3);
+            border-radius: 6px;
+            background: rgba(30, 41, 59, 0.6);
+            color: var(--text);
+            font-size: 1rem;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+        }
+
+        .auth-form .btn {
+            padding: 0.8rem;
+            margin-top: 0.5rem;
+        }
+
+        .auth-switch {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .auth-switch a {
+            color: var(--primary);
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero {
+                grid-template-columns: 1fr;
+                padding: 2rem 1rem;
+            }
+
+            .hero-content h1 {
+                font-size: 2rem;
+            }
+
+            .brain-hero {
+                display: none;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(100, 150, 200, 0.3);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(100, 150, 200, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <nav>
+            <div class="logo">🧠 BrainFix</div>
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#knowledge">Knowledge Base</a></li>
+                <li><a href="#pricing">Pricing</a></li>
+            </ul>
+            <div class="auth-buttons">
+                <button class="btn btn-secondary" onclick="openAuthModal('login')">Sign In</button>
+                <button class="btn btn-primary" onclick="openAuthModal('signup')">Get Started</button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="hero-content">
+                <h1>Intelligent Troubleshooting Made Simple</h1>
+                <p>Explore complex system issues through an interactive visual interface. Search brain regions to discover solutions mapped to real-world problems.</p>
+                
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Search symptoms, regions, or issues...">
+                    <div class="search-results" id="searchResults"></div>
+                </div>
+
+                <div class="cta-buttons">
+                    <button class="btn btn-primary" onclick="scrollToFeatures()">Explore Features</button>
+                    <button class="btn btn-secondary" onclick="openAuthModal('signup')">Start Free Trial</button>
+                </div>
+            </div>
+
+            <div style="position: relative;">
+                <div class="brain-hero">
+                    <iframe src="http://localhost:4200" style="width: 100%; height: 100%; border: none; border-radius: 12px;"></iframe>
+                </div>
+                <div class="brain-stats">
+                    <div class="stat">
+                        <span>Active Nodes</span>
+                        <span class="stat-value" id="nodeCount">0</span>
+                    </div>
+                    <div class="stat">
+                        <span>Connections</span>
+                        <span class="stat-value" id="linkCount">0</span>
+                    </div>
+                    <div class="stat">
+                        <span>Solutions Available</span>
+                        <span class="stat-value" id="solutionCount">0</span>
+                    </div>
+                </div>
+                <div class="info-panel" id="infoPanel" style="display: none;">
+                    <div class="info-title" id="infoTitle">Select a node</div>
+                    <div class="info-desc" id="infoDesc">Click on any brain region to view related troubleshooting guides.</div>
+                    <div class="info-guides" id="infoGuides" style="display: none;"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="features" id="features">
+            <h2 class="section-title">Powerful Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🔍</div>
+                    <h3>Smart Search</h3>
+                    <p>Search by symptoms, keywords, or brain regions to instantly find relevant solutions.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🧠</div>
+                    <h3>Visual Navigation</h3>
+                    <p>Explore interconnected systems through an interactive 3D brain visualization.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📚</div>
+                    <h3>Comprehensive KB</h3>
+                    <p>Access a growing knowledge base of solutions mapped to brain regions.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Lightning Fast</h3>
+                    <p>Get instant results without digging through lengthy documentation.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔐</div>
+                    <h3>Secure & Private</h3>
+                    <p>Your searches and preferences are encrypted and private.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Analytics Dashboard</h3>
+                    <p>Track which solutions help you most. Learn from patterns in troubleshooting.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Knowledge Base Section -->
+        <section class="knowledge-base" id="knowledge">
+            <h2 class="section-title">Browse Knowledge Base</h2>
+            <div class="kb-grid" id="kbGrid"></div>
+        </section>
+    </main>
+
+    <!-- Auth Modal -->
+    <div class="modal" id="authModal">
+        <div class="modal-content auth-modal-content">
+            <div class="modal-header">
+                <h2 id="authTitle">Sign In</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <form class="auth-form" id="authForm">
+                <div class="form-group">
+                    <label for="authEmail">Email</label>
+                    <input type="email" id="authEmail" placeholder="you@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="authPassword">Password</label>
+                    <input type="password" id="authPassword" placeholder="••••••••" required>
+                </div>
+                <div class="form-group" id="nameGroup" style="display: none;">
+                    <label for="authName">Full Name</label>
+                    <input type="text" id="authName" placeholder="John Doe">
+                </div>
+                <button type="submit" class="btn btn-primary">Continue</button>
+            </form>
+            <div class="auth-switch" id="authSwitch">
+                Don't have an account? <a onclick="switchAuthMode()">Sign up</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Solution Modal -->
+    <div class="modal" id="solutionModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="solutionTitle"></h2>
+                <button class="close-btn" onclick="closeSolutionModal()">&times;</button>
+            </div>
+            <div id="solutionBody"></div>
+        </div>
+    </div>
+
+    <!-- Required Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three-spritetext@1.8.0/dist/index.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/3d-force-graph@1.77.0/dist/3d-force-graph.min.js"></script>
+
+    <!-- Brain Modules -->
+    <script src="brain-visualizer.js"></script>
+    <script src="brain-search.js"></script>
+
+    <script>
+        let brainSearch;
+        let currentAuthMode = 'login';
+
+        // Initialize on page load
+        window.addEventListener('load', async () => {
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for CDN libraries
+            initializeBrain();
+            populateKnowledgeBase();
+        });
+
+        /**
+         * Initialize the hero brain
+         */
+        async function initializeBrain() {
+            console.log('🧠 Initializing BrainFix...');
+            
+            // Check if libraries are loaded
+            if (!window.THREE) {
+                console.error('❌ Three.js not loaded');
+                showError('Three.js failed to load. Check your internet connection.');
+                return;
+            }
+            if (!window.SpriteText) {
+                console.error('❌ SpriteText not loaded');
+                showError('SpriteText library failed to load.');
+                return;
+            }
+            if (!window.ForceGraph3D) {
+                console.error('❌ 3D Force Graph not loaded');
+                showError('3D Force Graph library failed to load.');
+                return;
+            }
+
+            console.log('✅ All libraries loaded');
+
+            try {
+                brainSearch = new BrainSearch('#heroBrain', {
+                    backgroundColor: '#0b0f19',
+                    nodeSize: 5,
+                    nodeTextHeight: 3,
+                    linkOpacity: 0.2,
+                    chargeStrength: -250,
+                    linkDistance: 80,
+                    velocityDecay: 0.6
+                });
+
+                console.log('🧠 BrainSearch instance created');
+                const success = await brainSearch.initialize();
+                
+                if (success) {
+                    console.log('✅ Brain initialized successfully');
+                } else {
+                    console.error('❌ Brain initialization failed');
+                    showError('Failed to initialize 3D brain visualization.');
+                    return;
+                }
+            } catch (error) {
+                console.error('❌ Error initializing brain:', error);
+                showError('Error: ' + error.message);
+                return;
+            }
+
+            // Update stats
+            document.getElementById('nodeCount').textContent = brainSearch.getNodeCount();
+            document.getElementById('linkCount').textContent = brainSearch.getLinkCount();
+            document.getElementById('solutionCount').textContent = brainSearch.getAllIssues().length;
+
+            // Listen for node clicks
+            document.addEventListener('brainNodeClicked', (event) => {
+                showNodeInfo(event.detail);
+            });
+
+            console.log('✅ BrainFix ready!');
+        }
+
+        /**
+         * Show error message
+         */
+        function showError(message) {
+            const errorDiv = document.getElementById('heroBrain');
+            errorDiv.innerHTML = `<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #ef4444; font-size: 16px; text-align: center; padding: 20px;">
+                <div>
+                    <div style="font-size: 48px; margin-bottom: 10px;">⚠️</div>
+                    <div><strong>Error Loading Brain</strong></div>
+                    <div style="font-size: 14px; margin-top: 10px; color: #cbd5e1;">${message}</div>
+                    <button onclick="location.reload()" style="margin-top: 15px; padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;">Reload Page</button>
+                </div>
+            </div>`;
+        }
+
+        /**
+         * Show node information
+         */
+        function showNodeInfo(node) {
+            const guides = brainSearch.getGuides(node.id);
+            const infoPanel = document.getElementById('infoPanel');
+            const infoTitle = document.getElementById('infoTitle');
+            const infoDesc = document.getElementById('infoDesc');
+            const infoGuides = document.getElementById('infoGuides');
+
+            infoTitle.textContent = node.label || node.id;
+            
+            if (guides) {
+                infoDesc.innerHTML = `
+                    <strong>Brain Region:</strong> ${node.label}<br>
+                    <strong>Related Issues:</strong> ${guides.issues.length}
+                `;
+                
+                infoGuides.innerHTML = guides.issues.map((issue, idx) => 
+                    `<div class="guide-item" onclick="openSolution('${node.label}', ${idx})">${issue.title}</div>`
+                ).join('');
+                infoGuides.style.display = 'block';
+            } else {
+                infoDesc.textContent = 'No troubleshooting guides available for this region.';
+                infoGuides.style.display = 'none';
+            }
+
+            infoPanel.style.display = 'block';
+        }
+
+        /**
+         * Handle search
+         */
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const query = e.target.value;
+            const results = brainSearch.searchBrain(query);
+            const resultsDiv = document.getElementById('searchResults');
+
+            if (!query) {
+                resultsDiv.classList.remove('active');
+                brainSearch.clearSearch();
+                return;
+            }
+
+            if (results.length > 0) {
+                resultsDiv.innerHTML = results.map(node => {
+                    const guides = brainSearch.getGuides(node.id);
+                    return `
+                        <div class="result-item" onclick="clickSearchResult('${node.id}')">
+                            <div class="result-title">${node.label || node.id}</div>
+                            ${guides ? `<div class="result-desc">${guides.issues.length} solutions</div>` : ''}
+                        </div>
+                    `;
+                }).join('');
+                resultsDiv.classList.add('active');
+            } else {
+                resultsDiv.classList.remove('active');
+            }
+        });
+
+        /**
+         * Click search result
+         */
+        function clickSearchResult(nodeId) {
+            const node = brainSearch.graphData.nodes.find(n => n.id === nodeId);
+            if (node) {
+                showNodeInfo(node);
+                document.getElementById('searchInput').value = '';
+                document.getElementById('searchResults').classList.remove('active');
+            }
+        }
+
+        /**
+         * Open solution modal
+         */
+        function openSolution(region, issueIndex) {
+            const guides = brainSearch.knowledgeBase[region];
+            if (!guides || !guides.issues[issueIndex]) return;
+
+            const issue = guides.issues[issueIndex];
+            document.getElementById('solutionTitle').textContent = issue.title;
+            document.getElementById('solutionBody').innerHTML = `
+                <div style="margin-bottom: 1.5rem;">
+                    <strong style="color: var(--primary);">Brain Region:</strong> ${region}
+                </div>
+                <div style="margin-bottom: 1.5rem;">
+                    <strong style="color: var(--primary);">Symptoms:</strong><br>
+                    ${issue.symptoms}
+                </div>
+                <div>
+                    <strong style="color: var(--primary);">Suggested Solutions:</strong>
+                    <div class="solution-step">1. Assess the specific symptoms more carefully</div>
+                    <div class="solution-step">2. Consult with a healthcare professional for diagnosis</div>
+                    <div class="solution-step">3. Follow clinical guidelines for treatment</div>
+                    <div class="solution-step">4. Monitor progress and adjust approach as needed</div>
+                </div>
+            `;
+
+            document.getElementById('solutionModal').classList.add('active');
+        }
+
+        /**
+         * Close solution modal
+         */
+        function closeSolutionModal() {
+            document.getElementById('solutionModal').classList.remove('active');
+        }
+
+        /**
+         * Populate knowledge base
+         */
+        function populateKnowledgeBase() {
+            const issues = brainSearch.getAllIssues();
+            const kbGrid = document.getElementById('kbGrid');
+
+            kbGrid.innerHTML = issues.slice(0, 12).map((issue, idx) => `
+                <div class="issue-card" onclick="openSolution('${issue.region}', ${idx})">
+                    <div class="issue-region">🧠 ${issue.region}</div>
+                    <div class="issue-title">${issue.title}</div>
+                    <div class="issue-symptoms">${issue.symptoms}</div>
+                </div>
+            `).join('');
+        }
+
+        /**
+         * Authentication
+         */
+        function openAuthModal(mode) {
+            currentAuthMode = mode;
+            const modal = document.getElementById('authModal');
+            const title = document.getElementById('authTitle');
+            const nameGroup = document.getElementById('nameGroup');
+            const switchText = document.getElementById('authSwitch');
+
+            if (mode === 'signup') {
+                title.textContent = 'Create Account';
+                nameGroup.style.display = 'flex';
+                switchText.innerHTML = 'Already have an account? <a onclick="switchAuthMode()">Sign in</a>';
+            } else {
+                title.textContent = 'Sign In';
+                nameGroup.style.display = 'none';
+                switchText.innerHTML = "Don't have an account? <a onclick=\"switchAuthMode()\">Sign up</a>";
+            }
+
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('authModal').classList.remove('active');
+        }
+
+        function switchAuthMode() {
+            currentAuthMode = currentAuthMode === 'login' ? 'signup' : 'login';
+            openAuthModal(currentAuthMode);
+        }
+
+        document.getElementById('authForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('authEmail').value;
+            alert(`${currentAuthMode === 'signup' ? 'Signed up' : 'Signed in'} as ${email}`);
+            closeModal();
+            document.getElementById('authForm').reset();
+        });
+
+        /**
+         * Scroll to features
+         */
+        function scrollToFeatures() {
+            document.getElementById('features').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Close search results when clicking outside
+        document.addEventListener('click', (e) => {
+            if (e.target.id !== 'searchInput' && !e.target.closest('.search-results')) {
+                document.getElementById('searchResults').classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>

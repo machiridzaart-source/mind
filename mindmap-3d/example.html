@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brain Visualizer - Website Integration Example</title>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #111827 0%, #1e293b 100%);
+            color: #e2e8f0;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 350px;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(100, 150, 200, 0.1);
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .sidebar h2 {
+            font-size: 18px;
+            color: #22d3ee;
+            margin-bottom: 10px;
+        }
+
+        .graph-container {
+            flex: 1;
+            position: relative;
+        }
+
+        .control-group {
+            background: rgba(30, 40, 60, 0.6);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(100, 150, 200, 0.1);
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 12px;
+            color: #94a3b8;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .control-group input,
+        .control-group button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            background: rgba(100, 150, 200, 0.1);
+            border: 1px solid rgba(100, 150, 200, 0.3);
+            color: #e2e8f0;
+            border-radius: 4px;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .control-group input:focus {
+            outline: none;
+            border-color: #22d3ee;
+            box-shadow: 0 0 10px rgba(34, 211, 238, 0.3);
+        }
+
+        .control-group button {
+            cursor: pointer;
+            background: rgba(34, 211, 238, 0.2);
+            border-color: #22d3ee;
+            transition: all 0.2s;
+        }
+
+        .control-group button:hover {
+            background: rgba(34, 211, 238, 0.4);
+            color: #22d3ee;
+        }
+
+        .info-box {
+            background: rgba(100, 150, 200, 0.1);
+            border: 1px solid rgba(100, 150, 200, 0.2);
+            border-radius: 4px;
+            padding: 10px;
+            font-size: 12px;
+            color: #cbd5e1;
+        }
+
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(100, 150, 200, 0.1);
+        }
+
+        .stat:last-child {
+            border-bottom: none;
+        }
+
+        .stat-value {
+            color: #22d3ee;
+            font-weight: 600;
+        }
+
+        .scroll-area {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .scroll-area::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .scroll-area::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .scroll-area::-webkit-scrollbar-thumb {
+            background: rgba(100, 150, 200, 0.3);
+            border-radius: 3px;
+        }
+
+        .scroll-area::-webkit-scrollbar-thumb:hover {
+            background: rgba(100, 150, 200, 0.5);
+        }
+
+        #nodeInfo {
+            background: rgba(100, 150, 200, 0.1);
+            border: 1px solid rgba(100, 150, 200, 0.2);
+            border-radius: 4px;
+            padding: 12px;
+            font-size: 12px;
+            line-height: 1.6;
+            color: #cbd5e1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h2>⚙️ Controls</h2>
+            
+            <div class="control-group">
+                <label>Add Node</label>
+                <input type="text" id="nodeName" placeholder="Node name">
+                <input type="text" id="nodeParent" placeholder="Parent node (optional)">
+                <button onclick="addNodeClick()">Add Node</button>
+            </div>
+
+            <div class="control-group">
+                <label>Statistics</label>
+                <div class="info-box">
+                    <div class="stat">
+                        <span>Total Nodes</span>
+                        <span class="stat-value" id="nodeCount">0</span>
+                    </div>
+                    <div class="stat">
+                        <span>Total Links</span>
+                        <span class="stat-value" id="linkCount">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Selected Node Info</label>
+                <div id="nodeInfo">Click a node to see info</div>
+            </div>
+
+            <div class="control-group">
+                <label>Actions</label>
+                <button onclick="exportData()" style="background: rgba(59, 130, 246, 0.2); border-color: #3b82f6;">Export JSON</button>
+                <button onclick="resetBrain()" style="background: rgba(239, 68, 68, 0.2); border-color: #ef4444;">Reset Brain</button>
+            </div>
+
+            <div style="color: #64748b; font-size: 11px; line-height: 1.6;">
+                <strong>How to use:</strong>
+                <ul style="margin-left: 15px; margin-top: 5px;">
+                    <li>💫 Drag to orbit</li>
+                    <li>🖱️ Click nodes to zoom</li>
+                    <li>✨ Hover to highlight connections</li>
+                    <li>➕ Add custom nodes</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Graph Container -->
+        <div id="graphContainer" class="graph-container"></div>
+    </div>
+
+    <!-- Required Libraries (CDN) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three-spritetext@1.8.0/dist/index.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/3d-force-graph@1.77.0/dist/3d-force-graph.min.js"></script>
+
+    <!-- Brain Visualizer Module -->
+    <script src="brain-visualizer.js"></script>
+
+    <script>
+        let brainVisualizer;
+
+        // Initialize when page loads
+        window.addEventListener('load', async () => {
+            console.log('Initializing Brain Visualizer...');
+
+            brainVisualizer = new BrainVisualizer('#graphContainer', {
+                backgroundColor: '#0b0f19',
+                nodeSize: 6,
+                nodeTextHeight: 4,
+                linkOpacity: 0.25,
+                chargeStrength: -200,
+                linkDistance: 100,
+                velocityDecay: 0.5
+            });
+
+            const success = await brainVisualizer.initialize();
+
+            if (success) {
+                updateStats();
+                console.log('✅ Brain Visualizer ready!');
+            } else {
+                console.error('❌ Failed to initialize Brain Visualizer');
+                document.getElementById('nodeInfo').innerHTML = '❌ Failed to load 3D libraries';
+            }
+        });
+
+        // Listen for node clicks
+        document.addEventListener('brainNodeClicked', (event) => {
+            const node = event.detail;
+            console.log('Clicked node:', node);
+            document.getElementById('nodeInfo').innerHTML = `
+                <strong>${node.label || node.id}</strong><br>
+                <small style="color: #94a3b8;">ID: ${node.id}</small><br>
+                <small style="color: #94a3b8;">Connections: ${brainVisualizer.graphData.links.filter(l => 
+                    (l.source === node.id || l.source.id === node.id) ||
+                    (l.target === node.id || l.target.id === node.id)
+                ).length}</small>
+            `;
+        });
+
+        // Update statistics
+        function updateStats() {
+            document.getElementById('nodeCount').textContent = brainVisualizer.getNodeCount();
+            document.getElementById('linkCount').textContent = brainVisualizer.getLinkCount();
+        }
+
+        // Add node
+        function addNodeClick() {
+            const name = document.getElementById('nodeName').value.trim();
+            const parent = document.getElementById('nodeParent').value.trim();
+
+            if (!name) {
+                alert('Please enter a node name');
+                return;
+            }
+
+            const success = brainVisualizer.addNode(name, name, parent || null);
+            if (success) {
+                document.getElementById('nodeName').value = '';
+                document.getElementById('nodeParent').value = '';
+                updateStats();
+                console.log('✅ Node added:', name);
+            } else {
+                alert('Node already exists');
+            }
+        }
+
+        // Export data
+        function exportData() {
+            const data = brainVisualizer.exportData();
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `brain-data-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            console.log('✅ Data exported');
+        }
+
+        // Reset brain
+        function resetBrain() {
+            if (confirm('⚠️ Are you sure? This will delete all data.')) {
+                brainVisualizer.clear();
+                brainVisualizer.generateBrainStructure();
+                brainVisualizer.createGraph();
+                brainVisualizer.setupInteractions();
+                updateStats();
+                console.log('✅ Brain reset');
+            }
+        }
+
+        // Keyboard shortcuts
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && document.activeElement.id === 'nodeName') {
+                addNodeClick();
+            }
+        });
+    </script>
+</body>
+</html>
